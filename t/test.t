@@ -4,7 +4,7 @@ use warnings;
 
 use Data::Dumper;
 
-use Test::More::Fork tests => 27;
+use Test::More::Fork tests => 28;
 use_ok( 'Test::More::Fork');
 
 can_ok( 'main', @Test::More::Fork::EXPORT );
@@ -64,8 +64,34 @@ fork_tests {
     no warnings 'redefine';
     no warnings 'once';
     my $message;
-    local *Test::More::Fork::fake = sub { 0 };
     local *Test::More::diag = sub { $message = shift };
+
+    # Hide test output
+    open( my $null, ">", "test-output" ) || die( "Could not open null" );
+    my $builder = Test::More->builder;
+    my $out = $builder->output;
+    my $err = $builder->failure_output;
+    $builder->failure_output( $null );
+    $builder->output( $null );
+
+    Test::More::Fork::_run_tests(
+        Dumper([{
+            'caller' => [ 'a', 'a', 10 ],
+            'sub' => 'ok',
+            'params' => [ 0, "This should fail" ],
+        }]) .
+        $Test::More::Fork::SEPERATOR
+    );
+
+    # Restore test output
+    $builder->current_test( $builder->current_test() -1 );
+    delete $builder->{ Test_Results }->[ $builder->current_test() ];
+    $builder->failure_output( $err );
+    $builder->output( $out );
+    close( $null );
+
+    Test::More::like( $message, qr/Problem at: a line: 10/, "Diagnostics message" );
+
     Test::More::Fork::_run_tests(
         Dumper([{
             'caller' => [ 'a', 'a', 10 ],
@@ -74,20 +100,17 @@ fork_tests {
         }]) .
         $Test::More::Fork::SEPERATOR
     );
-    Test::More::like( $message, qr/Problem at: a line: 10/, "Diagnostics message" );
-    Test::More::Fork::_run_tests(
-        Dumper([{
-            'caller' => [ 'a', 'a', 10 ],
-            'sub' => 'fakef',
-            'params' => [ 0 ],
-        }]) .
-        $Test::More::Fork::SEPERATOR
-    );
     Test::More::like(
         $message,
-        qr/Undefined subroutine &Test::More::Fork::fakef called at/,
+        qr/Undefined subroutine &Test::More::Fork::fake called at/,
         "Diagnostics error message"
     );
+
+    $message = undef;
+    fork_tests {
+        diag "Ignore this";
+    };
+    ok( !$message, "No warning for diag" );
 }
 
 my $ran = 0;
@@ -104,3 +127,4 @@ ok( $ran, "forked test ran" );
 fork_tests {
     ok( 1, "Placeholder" );
 };
+
