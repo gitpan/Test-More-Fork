@@ -58,7 +58,7 @@ use base 'Test::More';
 use Data::Dumper;
 
 our @EXPORT = ( 'fork_tests', 'fork_sub', @Test::More::EXPORT );
-our $VERSION = "0.005";
+our $VERSION = "0.006";
 our $CHILD;
 our $SEPERATOR = 'EODATA';
 
@@ -134,6 +134,7 @@ sub fork_tests(&;$$) {
 
 sub _run_tests {
     my $data = shift;
+    die( $data ) unless( $data =~ m/^\$VAR1/ );
     my $tests = _deserialize_data( $data );
     for my $test ( @$tests ) {
         my $caller = $test->{ 'caller' };

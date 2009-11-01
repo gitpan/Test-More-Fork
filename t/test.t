@@ -3,8 +3,9 @@ use strict;
 use warnings;
 
 use Data::Dumper;
+use Test::Exception;
 
-use Test::More::Fork tests => 28;
+use Test::More::Fork tests => 30;
 use_ok( 'Test::More::Fork');
 
 can_ok( 'main', @Test::More::Fork::EXPORT );
@@ -26,7 +27,7 @@ Test::More::is_deeply(
     $child,
     [
         {
-            'caller' => [ 'main', __FILE__, 20 ],
+            'caller' => [ 'main', __FILE__, 21 ],
             'sub' => 'is',
             'params' => [ 1, 1, "Test should be delayed" ],
         },
@@ -58,7 +59,7 @@ undef( $Test::More::Fork::CHILD );
 fork_tests {
     is( 1, 1, 'is Should pass' );
     ok( 1, 'ok should pass' );
-} "formed some tests", 2;
+} "forked some tests", 2;
 
 {
     no warnings 'redefine';
@@ -128,3 +129,9 @@ fork_tests {
     ok( 1, "Placeholder" );
 };
 
+dies_ok {
+    fork_tests {
+        ok( require XXX::XXX );
+    }
+} "dies when a forked test dies";
+like( $@, qr//, "good death message" );
