@@ -11,5 +11,10 @@ requires (
     'Test::More' => 0,
 );
 
+test_requires (
+    'Test::More' => 0,
+    'Test::Exception' => 0,
+);
+
 WriteAll;
 

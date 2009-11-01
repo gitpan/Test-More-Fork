@@ -58,7 +58,7 @@ use base 'Test::More';
 use Data::Dumper;
 
 our @EXPORT = ( 'fork_tests', 'fork_sub', @Test::More::EXPORT );
-our $VERSION = "0.006";
+our $VERSION = "0.007";
 our $CHILD;
 our $SEPERATOR = 'EODATA';
 
